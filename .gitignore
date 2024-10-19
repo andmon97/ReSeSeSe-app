@@ -1,2 +1,6 @@
+// exlude the python virtual env folders
+venv/*
+
+// exlude the dataset folders
 data/raw/*
 data/processed/*
