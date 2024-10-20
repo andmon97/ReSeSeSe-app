@@ -33,8 +33,8 @@ val_dataset = DeepGlobeDataset(image_dir=val_image_dir, mask_dir=val_mask_dir,
                                transform=image_transform, mask_transform=mask_transform)
 
 # DataLoader for batching the datasets
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=16)
+train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=4)
 
 # Initialize the Segformer model (choose model version and specify number of output classes)
 model = SegformerSegmentationModel(model_name="nvidia/segformer-b0-finetuned-ade-512-512", num_classes=NUM_CLASSES)
@@ -49,7 +49,7 @@ model.to(device)  # Move model to the device
 trainer = Trainer(model=model, dataloader_train=train_loader, dataloader_val=val_loader, device=device, num_classes=NUM_CLASSES)
 
 # Train the model for a specified number of epochs
-num_epochs = 10
+num_epochs = 5
 history = trainer.train(num_epochs=num_epochs)
 
 # Save the trained model to a file
