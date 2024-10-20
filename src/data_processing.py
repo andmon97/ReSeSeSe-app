@@ -64,10 +64,12 @@ class DeepGlobeDataset(Dataset):
         """
         # Convert the mask to a NumPy array
         mask = np.array(mask)
-        
+
+        # Ensure the mask is in channels-last format (height, width, 3)
+        if mask.shape[0] == 3 and len(mask.shape) == 3:  # If mask is in (3, height, width) format
+            mask = np.transpose(mask, (1, 2, 0))  # Convert to (height, width, 3)
+
         # Class label map logic:
-        # Define the color to class mappings, based on the specific color values for each class.
-        # Example: (R, G, B) -> class_index
         mapping = {
             (0, 255, 255): 0,   # Urban land
             (255, 255, 0): 1,   # Agriculture land
@@ -79,10 +81,11 @@ class DeepGlobeDataset(Dataset):
         }
 
         # Create an output mask where each pixel is replaced by the corresponding class index
-        output = np.zeros(mask.shape[:2], dtype=np.uint8)
+        output = np.zeros(mask.shape[:2], dtype=np.uint8)  # (height, width)
 
         for rgb, class_index in mapping.items():
             matches = np.all(mask == rgb, axis=-1)
             output[matches] = class_index
 
         return torch.from_numpy(output).long()
+

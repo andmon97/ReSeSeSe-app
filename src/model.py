@@ -2,8 +2,10 @@ import torch
 import torch.nn as nn
 from transformers import SegformerForSemanticSegmentation, AutoImageProcessor
 
+NUM_CLASSES = 6
+
 class SegformerSegmentationModel(nn.Module):
-    def __init__(self, model_name="nvidia/segformer-b0-finetuned-ade-512-512", num_classes=150):
+    def __init__(self, model_name="nvidia/segformer-b0-finetuned-ade-512-512", num_classes=NUM_CLASSES):
         """
         Initializes the Segformer model for semantic segmentation.
 
@@ -14,7 +16,12 @@ class SegformerSegmentationModel(nn.Module):
         super(SegformerSegmentationModel, self).__init__()
         
         # Load the pre-trained Segformer model
-        self.model = SegformerForSemanticSegmentation.from_pretrained(model_name, num_labels=num_classes)
+        # Load the pre-trained Segformer model, ignoring size mismatch for the classifier head
+        self.model = SegformerForSemanticSegmentation.from_pretrained(
+            model_name, 
+            num_labels=num_classes,
+            ignore_mismatched_sizes=True  # This will ignore the size mismatch in the classifier head
+        )
         
         # Load the image processor
         self.image_processor = AutoImageProcessor.from_pretrained(model_name)

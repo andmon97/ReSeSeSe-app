@@ -3,10 +3,11 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 
-from utils import pixel_accuracy, mIoU
+from .utils import pixel_accuracy, mIoU, plot_loss, plot_score, plot_acc
+NUM_CLASSES = 6
 
 class Trainer:
-    def __init__(self, model, dataloader_train, dataloader_val, device, num_classes, lr=1e-4, weight_decay=1e-5):
+    def __init__(self, model, dataloader_train, dataloader_val, device, num_classes=NUM_CLASSES, lr=1e-4, weight_decay=1e-5):
         """
         Initialize the Trainer with the model, dataloaders, and optimization parameters.
         
