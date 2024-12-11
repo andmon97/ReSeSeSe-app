@@ -5,7 +5,7 @@ from transformers import SegformerForSemanticSegmentation, AutoImageProcessor
 NUM_CLASSES = 6
 
 class SegformerSegmentationModel(nn.Module):
-    def __init__(self, model_name="nvidia/segformer-b0-finetuned-ade-512-512", num_classes=NUM_CLASSES):
+    def __init__(self, model_name="nvidia/mit-b0", num_classes=NUM_CLASSES):
         """
         Initializes the Segformer model for semantic segmentation.
 
@@ -37,6 +37,8 @@ class SegformerSegmentationModel(nn.Module):
             torch.Tensor: Output logits for segmentation.
         """
         outputs = self.model(pixel_values=pixel_values)
+        logits_resized = nn.functional.interpolate(outputs.logits, size=(512, 512), mode='bilinear', align_corners=False)
+        
         return outputs.logits
 
     def process_image(self, image):

@@ -5,6 +5,8 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
+NUM_CLASSES = 6
+
 class DeepGlobeDataset(Dataset):
     def __init__(self, image_dir, mask_dir, transform=None, mask_transform=None):
         """
@@ -40,7 +42,7 @@ class DeepGlobeDataset(Dataset):
 
         # Open the image and mask using PIL
         image = Image.open(image_path).convert("RGB")
-        mask = Image.open(mask_path).convert("RGB")
+        mask = Image.open(mask_path).convert("RGB")  # Make sure this is supposed to be RGB
 
         # Apply transformations to the image and mask
         if self.transform:
@@ -49,11 +51,13 @@ class DeepGlobeDataset(Dataset):
         if self.mask_transform:
             mask = self.mask_transform(mask)
 
-        # Convert mask RGB to class indices (you can add this logic if needed)
+        # Convert mask RGB to class indices (add this logic if needed)
         mask = self.rgb_to_class(mask)
+        # After loading and transforming your mask to tensor
+        mask.clamp_(min=0, max=NUM_CLASSES-1)
 
         return image, mask
-
+    
     def rgb_to_class(self, mask):
         """
         Converts the RGB mask image to a class label map. This method assumes

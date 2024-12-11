@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.amp import autocast, GradScaler
+import torch.nn.functional as F
 from tqdm import tqdm
 
 from .utils import pixel_accuracy, mIoU, plot_loss, plot_score, plot_acc
@@ -32,9 +32,6 @@ class Trainer:
         
         # Optimizer: AdamW optimizer
         self.optimizer = optim.AdamW(self.model.parameters(), lr=lr, weight_decay=weight_decay)
-
-        # Initialize the gradient scaler
-        self.scaler = GradScaler()  
     
     
     def train_one_epoch(self, epoch):
@@ -43,26 +40,16 @@ class Trainer:
         running_acc = 0.0
         running_miou = 0.0
 
-        for batch in tqdm(self.dataloader_train, desc=f"Epoch {epoch+1} [Train]"):
-            inputs, labels = batch
-            inputs = inputs.to(self.device)
-            labels = labels.to(self.device)
+        for inputs, labels in tqdm(self.dataloader_train, desc=f"Epoch {epoch+1} [Train]"):
+            inputs, labels = inputs.to(self.device), labels.to(self.device)
 
             self.optimizer.zero_grad()
+            outputs = self.model(inputs)
+            outputs = F.interpolate(outputs, size=(512, 512), mode='bilinear', align_corners=False)
+            loss = self.criterion(outputs, labels)
 
-            # autocast context reduces the precision for certain operations to speed up training and reduce memory usage
-            with autocast(device_type=self.device.type):
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs, labels)
-
-            # Scales the loss, and calls backward() to create scaled gradients
-            self.scaler.scale(loss).backward()
-            
-            # Scaler step updates the weights and unscale the gradients
-            self.scaler.step(self.optimizer)
-            
-            # Updates the scale for the next iteration
-            self.scaler.update()
+            loss.backward()
+            self.optimizer.step()
 
             running_loss += loss.item()
             running_acc += pixel_accuracy(outputs, labels)
@@ -82,14 +69,11 @@ class Trainer:
         running_miou = 0.0
 
         with torch.no_grad():
-            for batch in tqdm(self.dataloader_val, desc=f"Epoch {epoch+1} [Validate]"):
-                inputs, labels = batch
-                inputs = inputs.to(self.device)
-                labels = labels.to(self.device)
+            for inputs, labels in tqdm(self.dataloader_val, desc=f"Epoch {epoch+1} [Validate]"):
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
 
-                with autocast():
-                    outputs = self.model(inputs)
-                    loss = self.criterion(outputs, labels)
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, labels)
 
                 running_loss += loss.item()
                 running_acc += pixel_accuracy(outputs, labels)
@@ -100,6 +84,8 @@ class Trainer:
         avg_miou = running_miou / len(self.dataloader_val)
 
         return avg_loss, avg_acc, avg_miou
+
+
 
 
     def train(self, num_epochs):

@@ -19,13 +19,18 @@ val_mask_dir = 'data/raw/valid/'
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
 
-# Define transformations for images (normalizing with ImageNet stats) and masks
+# Define transformations for the images
 image_transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(mean=mean, std=std)
+    transforms.Resize((512, 512)),  # Resize the image to 512x512 pixels
+    transforms.ToTensor(),          # Convert the image to a PyTorch tensor
+    transforms.Normalize(mean=mean, std=std)  # Normalize with ImageNet statistics
 ])
 
-mask_transform = transforms.ToTensor()  # Convert masks to tensors (you can add mask transformations as needed)
+# Define transformations for the masks
+mask_transform = transforms.Compose([
+    transforms.Resize((512, 512)),  # Resize the mask to 512x512 pixels
+    transforms.ToTensor()           # Convert the mask to a PyTorch tensor
+])
 
 train_dataset = DeepGlobeDataset(image_dir=train_image_dir, mask_dir=train_mask_dir, 
                                  transform=image_transform, mask_transform=mask_transform)
