@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 
-NUM_CLASSES = 6
+NUM_CLASSES = 7
 DEFAULT_SMOOTH = 1e-10
 
 def pixel_accuracy(output, mask):

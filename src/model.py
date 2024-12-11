@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from transformers import SegformerForSemanticSegmentation, AutoImageProcessor
 
-NUM_CLASSES = 6
+NUM_CLASSES = 7
 
 class SegformerSegmentationModel(nn.Module):
     def __init__(self, model_name="nvidia/mit-b0", num_classes=NUM_CLASSES):

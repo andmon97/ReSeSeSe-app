@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 from .utils import pixel_accuracy, mIoU, plot_loss, plot_score, plot_acc
-NUM_CLASSES = 6
+NUM_CLASSES = 7
 
 class Trainer:
     def __init__(self, model, dataloader_train, dataloader_val, device, num_classes=NUM_CLASSES, lr=1e-4, weight_decay=1e-5):
@@ -42,16 +42,22 @@ class Trainer:
 
         for inputs, labels in tqdm(self.dataloader_train, desc=f"Epoch {epoch+1} [Train]"):
             inputs, labels = inputs.to(self.device), labels.to(self.device)
+            
+            # Ensure labels are in the correct format for cross-entropy loss
+            labels = labels.squeeze(1)  # Remove the channel dimension if present
 
             self.optimizer.zero_grad()
             outputs = self.model(inputs)
+            
+            # Resize outputs to match the label size (if necessary)
             outputs = F.interpolate(outputs, size=(512, 512), mode='bilinear', align_corners=False)
+            
             loss = self.criterion(outputs, labels)
-
             loss.backward()
             self.optimizer.step()
 
             running_loss += loss.item()
+            # Assuming pixel_accuracy and mIoU are defined elsewhere and handle any necessary softmax etc.
             running_acc += pixel_accuracy(outputs, labels)
             running_miou += mIoU(outputs, labels, n_classes=self.num_classes)
 
@@ -60,6 +66,7 @@ class Trainer:
         avg_miou = running_miou / len(self.dataloader_train)
 
         return avg_loss, avg_acc, avg_miou
+
 
 
     def validate(self, epoch):
