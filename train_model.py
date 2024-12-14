@@ -66,6 +66,7 @@ model = SegformerSegmentationModel(model_name="nvidia/segformer-b0-finetuned-ade
 
 # Set device to GPU if available, otherwise CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device ="cpu"
 model.to(device)
 
 # Initialize the Trainer with model, dataloaders, and other parameters

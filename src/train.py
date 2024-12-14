@@ -69,14 +69,12 @@ class Trainer:
 
 
 
-    def validate(self, epoch, is_to_plot=False, images_to_plot=2):
+    def validate(self, epoch):
         self.model.eval()
         running_loss = 0.0
-        running_acc = 0.0
-        running_miou = 0.0
-        images_to_plot = []
-        masks_to_plot = []
-        predictions_to_plot = []
+        total_acc = 0.0
+        total_miou = 0.0
+        num_samples = 0  # To keep track of the number of samples processed
 
         with torch.no_grad():
             for inputs, labels in tqdm(self.dataloader_val, desc=f"Epoch {epoch+1} [Validate]"):
@@ -90,22 +88,17 @@ class Trainer:
 
                 loss = self.criterion(outputs, labels)
                 running_loss += loss.item()
-                running_acc += pixel_accuracy(outputs, labels)
-                running_miou += mIoU(outputs, labels, n_classes=self.num_classes)
+                total_acc += pixel_accuracy(outputs, labels) * inputs.size(0)
+                total_miou += mIoU(outputs, labels, n_classes=self.num_classes) * inputs.size(0)
+                num_samples += inputs.size(0)
 
-                if ((is_to_plot) and (len(images_to_plot) < 2)):  # Save images, masks, and predictions for plotting
-                    images_to_plot.extend(inputs.cpu())
-                    masks_to_plot.extend(labels.cpu())
-                    pred_masks = torch.argmax(outputs, dim=1).cpu()
-                    predictions_to_plot.extend(pred_masks)
-
+        # Calculate the average loss, accuracy, and mIoU
         avg_loss = running_loss / len(self.dataloader_val)
-        avg_acc = running_acc / len(self.dataloader_val)
-        avg_miou = running_miou / len(self.dataloader_val)
+        avg_acc = total_acc / num_samples
+        avg_miou = total_miou / num_samples
 
-        # Plot images and masks at the end of validation
-        if ((is_to_plot) and (epoch % 1 == 0)):  # Adjust if you want less frequent updates
-            plot_images_and_masks(images_to_plot, masks_to_plot, predictions_to_plot)
+        # Output the validation results for this epoch
+        print(f'Validation results - Epoch: {epoch+1}, Loss: {avg_loss:.4f}, Accuracy: {avg_acc:.4f}, mIoU: {avg_miou:.4f}')
 
         return avg_loss, avg_acc, avg_miou
 
