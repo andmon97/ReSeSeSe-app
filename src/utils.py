@@ -138,17 +138,26 @@ def plot_images_and_masks(images, masks, predictions, num_images=2):
     """
     fig, axes = plt.subplots(num_images, 3, figsize=(10, 3 * num_images))
     for i in range(num_images):
-        axes[i, 0].imshow(to_pil_image(images[i]))
+        # Ensure the input tensor for images is in the correct format
+        img_plot = to_pil_image(images[i].float().div(255))  # Assuming images are in [0, 255]
+        axes[i, 0].imshow(img_plot)
         axes[i, 0].set_title('Original Image')
         axes[i, 0].axis('off')
 
-        axes[i, 1].imshow(to_pil_image(masks[i]), cmap='gray')
+        # Convert masks and predictions to uint8 if necessary
+        mask_plot = masks[i].byte()  # Convert int64 to uint8
+        pred_plot = predictions[i].byte()
+
+        # Display true masks
+        axes[i, 1].imshow(to_pil_image(mask_plot), cmap='gray')
         axes[i, 1].set_title('True Mask')
         axes[i, 1].axis('off')
 
-        axes[i, 2].imshow(to_pil_image(predictions[i]), cmap='gray')
+        # Display predicted masks
+        axes[i, 2].imshow(to_pil_image(pred_plot), cmap='gray')
         axes[i, 2].set_title('Predicted Mask')
         axes[i, 2].axis('off')
 
     plt.tight_layout()
     plt.show()
+
