@@ -105,7 +105,7 @@ class Trainer:
 
         # Plot images and masks at the end of validation
         if ((is_to_plot) and (epoch % 1 == 0)):  # Adjust if you want less frequent updates
-            plot_images_and_masks(images_to_plot, masks_to_plot, predictions_to_plot,is_to_plot=True)
+            plot_images_and_masks(images_to_plot, masks_to_plot, predictions_to_plot)
 
         return avg_loss, avg_acc, avg_miou
 
@@ -113,12 +113,13 @@ class Trainer:
 
 
 
-    def train(self, num_epochs):
+    def train(self, num_epochs, is_validation_to_plot=False):
         """
         Train the model for multiple epochs.
         
         Args:
             num_epochs (int): Number of epochs to train.
+            is_validation_to_plot (boolean): decide to print part of validation or not.
         
         Returns:
             dict: Training and validation loss, accuracy, and IoU history.
@@ -137,7 +138,7 @@ class Trainer:
             train_loss, train_acc, train_miou = self.train_one_epoch(epoch)
 
             # Validate after every epoch
-            val_loss, val_acc, val_miou = self.validate(epoch)
+            val_loss, val_acc, val_miou = self.validate(epoch, is_to_plot=is_validation_to_plot, images_to_plot=4)
 
             # Store metrics in history
             history['train_loss'].append(train_loss)

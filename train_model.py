@@ -73,7 +73,7 @@ model.to(device)
 trainer = Trainer(model=model, dataloader_train=train_loader, dataloader_val=val_loader, device=device, num_classes=NUM_CLASSES)
 
 # Train the model for a specified number of epochs
-history = trainer.train(num_epochs=NUM_EPOCHS)
+history = trainer.train(num_epochs=NUM_EPOCHS, is_validation_to_plot=True)
 
 # Save the trained model
 os.makedirs("models", exist_ok=True)
