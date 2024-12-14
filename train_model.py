@@ -1,7 +1,7 @@
 import torch
 import os
 import json
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 
 from src.model import SegformerSegmentationModel
@@ -13,7 +13,6 @@ NUM_CLASSES = 7
 # Directories for images and masks
 train_image_dir = 'data/raw/train/'
 train_mask_dir = 'data/raw/train/'
-val_image_dir = 'data/raw/valid/'
 test_image_dir = 'data/raw/test/'
 
 # Normalization parameters (ImageNet statistics for pretrained models)
@@ -24,7 +23,7 @@ std = [0.229, 0.224, 0.225]
 image_transform = transforms.Compose([
     transforms.Resize((512, 512)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=mean, std=std)
 ])
 
 # Define transformations for the masks
@@ -33,31 +32,30 @@ mask_transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
-
 # Initialize datasets
-train_dataset = DeepGlobeDataset(
-    image_dir=train_image_dir, 
-    mask_dir=train_mask_dir, 
-    transform=image_transform, 
+full_train_dataset = DeepGlobeDataset(
+    image_dir=train_image_dir,
+    mask_dir=train_mask_dir,
+    transform=image_transform,
     mask_transform=mask_transform,
     use_masks=True
 )
 
-val_dataset = DeepGlobeDataset(
-    image_dir=val_image_dir,
-    transform=image_transform,
-    use_masks=False
-)
+# Splitting the dataset into train and validation
+train_size = int(0.8 * len(full_train_dataset))
+val_size = len(full_train_dataset) - train_size
+train_dataset, val_dataset = random_split(full_train_dataset, [train_size, val_size])
 
+# Initialize DataLoaders
+train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=4)
+
+# Test dataset (without masks)
 test_dataset = DeepGlobeDataset(
     image_dir=test_image_dir,
     transform=image_transform,
     use_masks=False
 )
-
-# Initialize DataLoaders
-train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=4)
 test_loader = DataLoader(test_dataset, batch_size=4)
 
 # Initialize the Segformer model
@@ -65,8 +63,6 @@ model = SegformerSegmentationModel(model_name="nvidia/segformer-b0-finetuned-ade
 
 # Set device to GPU if available, otherwise CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
 model.to(device)
 
 # Initialize the Trainer with model, dataloaders, and other parameters
