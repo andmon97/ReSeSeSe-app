@@ -79,13 +79,14 @@ class Trainer:
             for inputs, labels in tqdm(self.dataloader_val, desc=f"Epoch {epoch+1} [Validate]"):
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
-                # Print the shape of labels to confirm it's correct
-                print(f"Labels shape: {labels.shape}")  # Debugging line
-
                 if labels.dim() == 4 and labels.size(1) == 1:
-                    labels = labels.squeeze(1)
+                    labels = labels.squeeze(1)  # Ensure labels are [batch, height, width]
 
                 outputs = self.model(inputs)
+
+                # Up-sample outputs to match the labels' dimensions
+                outputs = torch.nn.functional.interpolate(outputs, size=(512, 512), mode='bilinear', align_corners=False)
+
                 loss = self.criterion(outputs, labels)
 
                 running_loss += loss.item()
@@ -97,6 +98,7 @@ class Trainer:
         avg_miou = running_miou / len(self.dataloader_val)
 
         return avg_loss, avg_acc, avg_miou
+
 
 
 
