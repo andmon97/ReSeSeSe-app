@@ -4,7 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from .utils import pixel_accuracy, mIoU, plot_loss, plot_score, plot_acc
+from .utils import pixel_accuracy, mIoU, plot_images_and_masks, plot_loss, plot_score, plot_acc
 NUM_CLASSES = 7
 
 class Trainer:
@@ -69,11 +69,14 @@ class Trainer:
 
 
 
-    def validate(self, epoch):
+    def validate(self, epoch, is_to_plot=False, images_to_plot=2):
         self.model.eval()
         running_loss = 0.0
         running_acc = 0.0
         running_miou = 0.0
+        images_to_plot = []
+        masks_to_plot = []
+        predictions_to_plot = []
 
         with torch.no_grad():
             for inputs, labels in tqdm(self.dataloader_val, desc=f"Epoch {epoch+1} [Validate]"):
@@ -83,21 +86,29 @@ class Trainer:
                     labels = labels.squeeze(1)  # Ensure labels are [batch, height, width]
 
                 outputs = self.model(inputs)
-
-                # Up-sample outputs to match the labels' dimensions
                 outputs = torch.nn.functional.interpolate(outputs, size=(512, 512), mode='bilinear', align_corners=False)
 
                 loss = self.criterion(outputs, labels)
-
                 running_loss += loss.item()
                 running_acc += pixel_accuracy(outputs, labels)
                 running_miou += mIoU(outputs, labels, n_classes=self.num_classes)
+
+                if ((is_to_plot) and (len(images_to_plot) < 2)):  # Save images, masks, and predictions for plotting
+                    images_to_plot.extend(inputs.cpu())
+                    masks_to_plot.extend(labels.cpu())
+                    pred_masks = torch.argmax(outputs, dim=1).cpu()
+                    predictions_to_plot.extend(pred_masks)
 
         avg_loss = running_loss / len(self.dataloader_val)
         avg_acc = running_acc / len(self.dataloader_val)
         avg_miou = running_miou / len(self.dataloader_val)
 
+        # Plot images and masks at the end of validation
+        if ((is_to_plot) and (epoch % 1 == 0)):  # Adjust if you want less frequent updates
+            plot_images_and_masks(images_to_plot, masks_to_plot, predictions_to_plot,is_to_plot=True)
+
         return avg_loss, avg_acc, avg_miou
+
 
 
 

@@ -15,12 +15,11 @@ class SegformerSegmentationModel(nn.Module):
         """
         super(SegformerSegmentationModel, self).__init__()
         
-        # Load the pre-trained Segformer model
         # Load the pre-trained Segformer model, ignoring size mismatch for the classifier head
         self.model = SegformerForSemanticSegmentation.from_pretrained(
             model_name, 
             num_labels=num_classes,
-            ignore_mismatched_sizes=True  # This will ignore the size mismatch in the classifier head
+            ignore_mismatched_sizes=True 
         )
         
         # Load the image processor
@@ -34,7 +33,7 @@ class SegformerSegmentationModel(nn.Module):
             pixel_values (torch.Tensor): Input tensor of pixel values.
         
         Returns:
-            torch.Tensor: Output logits for segmentation.
+            torch.Tensor size=(512, 512): Output logits for segmentation.
         """
         outputs = self.model(pixel_values=pixel_values)
         logits_resized = nn.functional.interpolate(outputs.logits, size=(512, 512), mode='bilinear', align_corners=False)
