@@ -66,14 +66,13 @@ model = SegformerSegmentationModel(model_name="nvidia/segformer-b0-finetuned-ade
 
 # Set device to GPU if available, otherwise CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device ="cpu"
 model.to(device)
 
 # Initialize the Trainer with model, dataloaders, and other parameters
 trainer = Trainer(model=model, dataloader_train=train_loader, dataloader_val=val_loader, device=device, num_classes=NUM_CLASSES)
 
 # Train the model for a specified number of epochs
-history = trainer.train(num_epochs=NUM_EPOCHS, is_validation_to_plot=True)
+history = trainer.train(num_epochs=NUM_EPOCHS)
 
 # Save the trained model
 os.makedirs("models", exist_ok=True)
