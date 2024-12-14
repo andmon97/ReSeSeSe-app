@@ -79,6 +79,10 @@ class Trainer:
             for inputs, labels in tqdm(self.dataloader_val, desc=f"Epoch {epoch+1} [Validate]"):
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
+                # Skip the batch if labels are empty (all zeros can still be processed if you choose)
+                if labels.nelement() == 0 or labels.size(1) == 0:
+                    continue
+
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels)
 
@@ -86,11 +90,12 @@ class Trainer:
                 running_acc += pixel_accuracy(outputs, labels)
                 running_miou += mIoU(outputs, labels, n_classes=self.num_classes)
 
-        avg_loss = running_loss / len(self.dataloader_val)
-        avg_acc = running_acc / len(self.dataloader_val)
-        avg_miou = running_miou / len(self.dataloader_val)
+        avg_loss = running_loss / len(self.dataloader_val) if len(self.dataloader_val) > 0 else 0
+        avg_acc = running_acc / len(self.dataloader_val) if len(self.dataloader_val) > 0 else 0
+        avg_miou = running_miou / len(self.dataloader_val) if len(self.dataloader_val) > 0 else 0
 
         return avg_loss, avg_acc, avg_miou
+
 
 
 

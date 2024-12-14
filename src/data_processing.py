@@ -35,7 +35,7 @@ class DeepGlobeDataset(torch.utils.data.Dataset):
         
         Returns:
             image: Transformed image tensor.
-            mask (optional): Transformed mask tensor if masks are used, otherwise None.
+            mask (optional): Transformed mask tensor if masks are used, otherwise a dummy mask.
         """
         image_id = self.image_ids[idx]
         image_path = os.path.join(self.image_dir, f"{image_id}_sat.jpg")
@@ -43,21 +43,18 @@ class DeepGlobeDataset(torch.utils.data.Dataset):
         if self.transform:
             image = self.transform(image)
 
-        if self.use_masks and self.mask_dir:
+        if self.use_masks and self.mask_dir and os.path.exists(os.path.join(self.mask_dir, f"{image_id}_mask.png")):
             mask_path = os.path.join(self.mask_dir, f"{image_id}_mask.png")
-            mask = Image.open(mask_path).convert("RGB")  # Ensure conversion to RGB
+            mask = Image.open(mask_path).convert("RGB")
             if self.mask_transform:
                 mask = self.mask_transform(mask)
-            
-            # Convert RGB mask to class indices, and ensure it's a long tensor
-            mask = self.rgb_to_class(mask)
-            if not isinstance(mask, torch.LongTensor):
-                mask = mask.long()  # Ensure mask is long type for loss calculation
-
-            return image, mask
+            mask = self.rgb_to_class(mask).long()
         else:
-            # Return image and a dummy tensor if no mask is used
-            return image, torch.tensor([], dtype=torch.long)
+            # Provide a dummy mask filled with a default class index, e.g., 0
+            # Ensure the dimensions match your model's expected input
+            mask = torch.zeros((1, 512, 512), dtype=torch.long)  # Adjust the dimensions as necessary
+
+        return image, mask
 
     def rgb_to_class(self, mask):
         """
